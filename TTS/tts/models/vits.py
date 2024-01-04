@@ -131,9 +131,13 @@ def wav_to_spec(y, n_fft, hop_length, win_length, center=False):
         pad_mode="reflect",
         normalized=False,
         onesided=True,
-        return_complex=False,
+        # JMa: To resolve UserWarning: stft with return_complex=False is deprecated by https://github.com/coqui-ai/TTS/issues/2639
+        # return_complex=False,
+        return_complex=True,
     )
 
+    # JMa: To resolve UserWarning: stft with return_complex=False is deprecated by https://github.com/coqui-ai/TTS/issues/2639
+    spec = torch.view_as_real(spec)
     spec = torch.sqrt(spec.pow(2).sum(-1) + 1e-6)
     return spec
 
@@ -199,9 +203,13 @@ def wav_to_mel(y, n_fft, num_mels, sample_rate, hop_length, win_length, fmin, fm
         pad_mode="reflect",
         normalized=False,
         onesided=True,
-        return_complex=False,
+        # JMa: To resolve UserWarning: stft with return_complex=False is deprecated by https://github.com/coqui-ai/TTS/issues/2639
+        # return_complex=False,
+        return_complex=True,
     )
 
+    # JMa: To resolve UserWarning: stft with return_complex=False is deprecated by https://github.com/coqui-ai/TTS/issues/2639
+    spec = torch.view_as_real(spec)
     spec = torch.sqrt(spec.pow(2).sum(-1) + 1e-6)
     spec = torch.matmul(mel_basis[fmax_dtype_device], spec)
     spec = amp_to_db(spec)
@@ -1514,7 +1522,9 @@ class Vits(BaseTTS):
                 do_trim_silence=False,
             )
             test_audios["{}-audio".format(idx)] = outputs["wav"]
-            test_figures["{}-alignment".format(idx)] = plot_alignment(outputs["alignments"].T, output_fig=False)
+            # JMa: Resolve UserWarning: The use of `x.T` on tensors of dimension other than 2 to reverse their shape is deprecated
+            # test_figures["{}-alignment".format(idx)] = plot_alignment(outputs["alignments"].T, output_fig=False)
+            test_figures["{}-alignment".format(idx)] = plot_alignment(outputs["alignments"].mT, output_fig=False)
         return {"figures": test_figures, "audios": test_audios}
 
     def test_log(
