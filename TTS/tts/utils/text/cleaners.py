@@ -165,12 +165,12 @@ def multilingual_cleaners(text):
     return text
 
 def no_cleaners(text):
-    """JMa: Basic pipeline that only collapses whitespace. No lowercase is done!"""
-    text = collapse_whitespace(text)
+    # remove newline characters
+    text = text.replace("\n", "")
     return text
 
-def ipa_cleaners(text):
-    """ZHa: Basic pipeline collapses whitespace and split to tokens."""
+def list_cleaners(text):
+    """ZHa: Basic pipeline collapses whitespace and split list-like input (symbols delimited by '|') to tokens."""
     text = collapse_whitespace(text)
     tokens = text.split("|")
     return tokens
