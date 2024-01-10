@@ -462,7 +462,7 @@ class VitsArgs(Coqpit):
         init_discriminator (bool):
             Initialize the disciminator network if set True. Set False for inference. Defaults to True.
 
-        use_spectral_norm_disriminator (bool):
+        use_spectral_norm_discriminator (bool):
             Use spectral normalization over weight norm in the discriminator. Defaults to False.
 
         use_speaker_embedding (bool):
@@ -572,7 +572,7 @@ class VitsArgs(Coqpit):
     inference_noise_scale_dp: float = 1.0
     max_inference_len: int = None
     init_discriminator: bool = True
-    use_spectral_norm_disriminator: bool = False
+    use_spectral_norm_discriminator: bool = False
     use_speaker_embedding: bool = False
     num_speakers: int = 0
     speakers_file: str = None
@@ -720,7 +720,7 @@ class Vits(BaseTTS):
         if self.args.init_discriminator:
             self.disc = VitsDiscriminator(
                 periods=self.args.periods_multi_period_discriminator,
-                use_spectral_norm=self.args.use_spectral_norm_disriminator,
+                use_spectral_norm=self.args.use_spectral_norm_discriminator,
             )
 
     @property
