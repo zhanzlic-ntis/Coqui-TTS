@@ -164,8 +164,13 @@ def multilingual_cleaners(text):
     text = collapse_whitespace(text)
     return text
 
-
 def no_cleaners(text):
     # remove newline characters
     text = text.replace("\n", "")
     return text
+
+def list_cleaners(text):
+    """ZHa: Basic pipeline collapses whitespace and split list-like input (symbols delimited by '|') to tokens."""
+    text = collapse_whitespace(text)
+    tokens = text.split("|")
+    return tokens

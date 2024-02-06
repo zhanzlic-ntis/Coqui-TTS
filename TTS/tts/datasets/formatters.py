@@ -685,7 +685,7 @@ def artic(root_path, meta_file, **kwargs):  # pylint: disable=unused-argument
                          transcripts of the corresponding utterances
     
     Returns:
-        List[List[str]]: List of (text, wav_path, speaker_name, language, root_path) associated with each utterance
+        List[Dict[str]]: List of (utt_name, text, wav_path, speaker_name, language, root_path) associated with each utterance
     """
     txt_file = os.path.join(root_path, meta_file)
     items = []
@@ -702,19 +702,18 @@ def artic(root_path, meta_file, **kwargs):  # pylint: disable=unused-argument
     with open(txt_file, "r", encoding="utf-8") as ttf:
         for line in ttf:
             # Check the number of standard separators
-            n_seps = line.count("|")
-            if n_seps > 0:
+            if "|" in line:
                 # Split according to standard separator
-                cols = line.split("|")
+                cols = line.split("|", maxsplit=1)
             else:
                 # Assume ARTIC SNT format => wav name is delimited by the first space
                 cols = line.split(maxsplit=1)
             # In either way, wav name is stored in `cols[0]` and text in `cols[-1]`
-            wav_file = os.path.join(root_path, "wavs", cols[0] + ".wav")
+            utt_name = cols[0]
+            wav_file = os.path.join(root_path, "wavs", utt_name + ".wav")
             text = cols[-1]
-            items.append({"text": text, "audio_file": wav_file, "speaker_name": speaker_name, "language": lang, "root_path": root_path})
+            items.append({"utt_name": utt_name, "text": text, "audio_file": wav_file, "speaker_name": speaker_name, "language": lang, "root_path": root_path})
     return items
-
 
 def artic_multispeaker(root_path, meta_file, ignored_speakers=None): # pylint: disable=unused-argument
     """Normalizes the ARTIC multi-speaker meta data files to TTS format

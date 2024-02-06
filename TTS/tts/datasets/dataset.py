@@ -247,7 +247,10 @@ class TTSDataset(Dataset):
         return np.load(attn_file)
 
     def get_token_ids(self, idx, text):
-        if self.tokenizer.use_phonemes:
+        # ZHa: input is given as token list
+        if isinstance(text, list):
+            token_ids = self.tokenizer.text_to_ids(text)
+        elif self.tokenizer.use_phonemes:
             token_ids = self.get_phonemes(idx, text)["token_ids"]
         else:
             token_ids = self.tokenizer.text_to_ids(text)
@@ -268,9 +271,10 @@ class TTSDataset(Dataset):
         token_ids = self.get_token_ids(idx, item["text"])
 
         # get pre-computed attention maps
-        attn = None
         if "alignment_file" in item:
             attn = self.get_attn_mask(item["alignment_file"])
+        else:
+            attn = None
 
         # after phonemization the text length may change
         # this is a shareful 🤭 hack to prevent longer phonemes

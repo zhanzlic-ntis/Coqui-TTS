@@ -143,22 +143,69 @@ def load_tts_samples(
                 meta_data_eval, meta_data_train = split_dataset(meta_data_train, eval_size_per_dataset, eval_split_size)
             meta_data_eval_all += meta_data_eval
         meta_data_train_all += meta_data_train
-        # load attention masks for the duration predictor training
-        if dataset.meta_file_attn_mask:
-            meta_data = dict(load_attention_mask_meta_data(dataset["meta_file_attn_mask"]))
+        
+        if dataset.meta_file_dur:
+            fn = Path(dataset["meta_file_dur"])
+            if not fn.exists():
+                fn = Path(root_path) / fn
+
+            assert fn.exists(), f" [!] Cannot find/open attention metafile \"{dataset['meta_file_dur']}\""
+            meta_data = dict(load_duration_meta_data(fn))
+
             for idx, ins in enumerate(meta_data_train_all):
-                attn_file = meta_data[ins["audio_file"]].strip()
-                meta_data_train_all[idx].update({"alignment_file": attn_file})
+                if ins["utt_name"] in meta_data:
+                    meta_data_train_all[idx].update({"duration": meta_data[ins["utt_name"]]})
+
             if meta_data_eval_all:
                 for idx, ins in enumerate(meta_data_eval_all):
+                    if ins["utt_name"] in meta_data:
+                        meta_data_eval_all[idx].update({"duration": meta_data[ins["utt_name"]]})
+
+        # load attention masks for the duration predictor training
+        if dataset.meta_file_attn_mask:
+            
+            fn = Path(dataset["meta_file_attn_mask"])
+            if not fn.exists():
+                fn = Path(root_path) / fn
+
+            assert fn.exists(), f" [!] Cannot find/open attention metafile \"{dataset['meta_file_attn_mask']}\""
+            meta_data = dict(load_attention_mask_meta_data(fn))
+            
+            for idx, ins in enumerate(meta_data_train_all):
+                
+                # ZHa: loading attention mask by the utterance name or by the full wave filename
+                attn_file = None
+                if ins["audio_file"] in meta_data:
                     attn_file = meta_data[ins["audio_file"]].strip()
-                    meta_data_eval_all[idx].update({"alignment_file": attn_file})
+                elif ins["utt_name"] in meta_data:
+                    attn_file = meta_data[ins["utt_name"]].strip()
+
+                if attn_file:
+                    meta_data_train_all[idx].update({"alignment_file": attn_file})
+                else:
+                    pass # no attention file found (may be created during the training process)
+
+            if meta_data_eval_all:
+                for idx, ins in enumerate(meta_data_eval_all):
+                    
+                    # ZHa: loading attention mask by the utterance name or by the full wave filename
+                    attn_file = None
+                    if ins["audio_file"] in meta_data:
+                        attn_file = meta_data[ins["audio_file"]].strip()
+                    elif ins["utt_name"] in meta_data:
+                        attn_file = meta_data[ins["utt_name"]].strip()
+
+                    if attn_file:
+                        meta_data_eval_all[idx].update({"alignment_file": attn_file})
+                    else:
+                        pass # no attention file found (may be created during the training process)
+
         # set none for the next iter
         formatter = None
     return meta_data_train_all, meta_data_eval_all
 
 
-def load_attention_mask_meta_data(metafile_path):
+def load_attention_mask_meta_data(metafile_path) -> List:
     """Load meta data file created by compute_attention_masks.py"""
     with open(metafile_path, "r", encoding="utf-8") as f:
         lines = f.readlines()
@@ -167,6 +214,19 @@ def load_attention_mask_meta_data(metafile_path):
     for line in lines:
         wav_file, attn_file = line.split("|")
         meta_data.append([wav_file, attn_file])
+    return meta_data
+
+
+def load_duration_meta_data(metafile_path) -> Dict:
+    """Load duration meta data file."""
+    with open(metafile_path, "r", encoding="utf-8") as f:
+        lines = f.readlines()
+
+    meta_data = dict()
+    for line in lines:
+        utt_name, dur_str = line.split("|")
+        durations = [ int(D.strip()) for D in dur_str.split(",") ]
+        meta_data[utt_name] = np.array(durations, dtype=np.int32)
     return meta_data
 
 
