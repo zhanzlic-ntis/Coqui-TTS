@@ -152,14 +152,16 @@ def load_tts_samples(
             assert fn.exists(), f" [!] Cannot find/open attention metafile \"{dataset['meta_file_dur']}\""
             meta_data = dict(load_duration_meta_data(fn))
 
+            print(" | > Loading duration metadata", fn)
+
             for idx, ins in enumerate(meta_data_train_all):
-                if ins["utt_name"] in meta_data:
-                    meta_data_train_all[idx].update({"duration": meta_data[ins["utt_name"]]})
+                assert ins["utt_name"] in meta_data, f" [!] Cannot find \"{ins['utt_name']}\" in duration metafile"
+                meta_data_train_all[idx].update({"duration": meta_data[ins["utt_name"]]})
 
             if meta_data_eval_all:
                 for idx, ins in enumerate(meta_data_eval_all):
-                    if ins["utt_name"] in meta_data:
-                        meta_data_eval_all[idx].update({"duration": meta_data[ins["utt_name"]]})
+                    assert ins["utt_name"] in meta_data, f" [!] Cannot find \"{ins['utt_name']}\" in duration metafile"
+                    meta_data_eval_all[idx].update({"duration": meta_data[ins["utt_name"]]})
 
         # load attention masks for the duration predictor training
         if dataset.meta_file_attn_mask:

@@ -288,6 +288,7 @@ class VitsDataset(TTSDataset):
         # ZHa: duration
         if "duration" in item:
             output_item["duration"] = item["duration"]
+            assert len(output_item["duration"]) == output_item["token_len"], "different token and duration vector lengths: " + str(output_item["token_ids"]) + " and " + str(output_item["duration"])
 
         return output_item
 

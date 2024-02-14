@@ -369,7 +369,6 @@ class TTSDataset(Dataset):
         ignore_idx = list(set(audio_ignore_idx) | set(text_ignore_idx))
 
         samples = self._select_samples_by_idx(keep_idx, samples)
-
         sorted_idxs = self.sort_by_length(samples)
 
         if self.start_by_longest:
