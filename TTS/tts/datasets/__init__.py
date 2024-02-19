@@ -141,9 +141,8 @@ def load_tts_samples(
             else:
                 eval_size_per_dataset = eval_split_max_size // len(datasets) if eval_split_max_size else None
                 meta_data_eval, meta_data_train = split_dataset(meta_data_train, eval_size_per_dataset, eval_split_size)
-            meta_data_eval_all += meta_data_eval
-        meta_data_train_all += meta_data_train
         
+        # load phones/tokens duration
         if dataset.meta_file_dur:
             fn = Path(dataset["meta_file_dur"])
             if not fn.exists():
@@ -156,12 +155,12 @@ def load_tts_samples(
 
             for idx, ins in enumerate(meta_data_train):
                 assert ins["utt_name"] in meta_data, f" [!] Cannot find \"{ins['utt_name']}\" in duration metafile"
-                meta_data_train_all[idx].update({"duration": meta_data[ins["utt_name"]]})
+                meta_data_train[idx].update({"duration": meta_data[ins["utt_name"]]})
 
             if meta_data_eval:
                 for idx, ins in enumerate(meta_data_eval):
                     assert ins["utt_name"] in meta_data, f" [!] Cannot find \"{ins['utt_name']}\" in duration metafile"
-                    meta_data_eval_all[idx].update({"duration": meta_data[ins["utt_name"]]})
+                    meta_data_eval[idx].update({"duration": meta_data[ins["utt_name"]]})
 
         # load attention masks for the duration predictor training
         if dataset.meta_file_attn_mask:
@@ -183,7 +182,7 @@ def load_tts_samples(
                     attn_file = meta_data[ins["utt_name"]].strip()
 
                 if attn_file:
-                    meta_data_train_all[idx].update({"alignment_file": attn_file})
+                    meta_data_train[idx].update({"alignment_file": attn_file})
                 else:
                     pass # no attention file found (may be created during the training process)
 
@@ -198,12 +197,17 @@ def load_tts_samples(
                         attn_file = meta_data[ins["utt_name"]].strip()
 
                     if attn_file:
-                        meta_data_eval_all[idx].update({"alignment_file": attn_file})
+                        meta_data_eval[idx].update({"alignment_file": attn_file})
                     else:
                         pass # no attention file found (may be created during the training process)
 
+        if eval_split:
+            meta_data_eval_all += meta_data_eval
+        meta_data_train_all += meta_data_train
+
         # set none for the next iter
         formatter = None
+
     return meta_data_train_all, meta_data_eval_all
 
 
