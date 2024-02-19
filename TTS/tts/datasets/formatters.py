@@ -715,7 +715,7 @@ def artic(root_path, meta_file, **kwargs):  # pylint: disable=unused-argument
             items.append({"utt_name": utt_name, "text": text, "audio_file": wav_file, "speaker_name": speaker_name, "language": lang, "root_path": root_path})
     return items
 
-def artic_multispeaker(root_path, meta_file, ignored_speakers=None): # pylint: disable=unused-argument
+def artic_multispeaker(root_path, meta_file, ignored_speakers=None, **kwargs): # pylint: disable=unused-argument
     """Normalizes the ARTIC multi-speaker meta data files to TTS format
 
     Args:
@@ -739,6 +739,28 @@ def artic_multispeaker(root_path, meta_file, ignored_speakers=None): # pylint: d
         items.extend(artic(pth, meta_file))
     return items
 
+def artic_multispeaker_level2(root_path, meta_file, ignored_speakers=None, **kwargs): # pylint: disable=unused-argument
+    """ARTIC multi-speaker dataset with 2-level directory structure (speaker/source)
+
+    Args:
+        root_path (str): path to the artic dataset
+        meta_file (str): name of the meta file containing utterance names and corresponding transcripts
+                         !Must be the same for all speakers!
+        ignore_speakers (List[str]): list of ignored speakers (or None)
+    
+    Returns:
+        List[List[str]]: List of (text, wav_path, speaker_name) associated with each utterance
+    """
+    items = []
+    # Loop over speakers: speaker names are subdirs of `root_path`
+    for pth in glob(f"{root_path}/*/", recursive=False):
+        speaker_name = os.path.basename(pth)
+        # Ignore speakers
+        if isinstance(ignored_speakers, list) and speaker_name in ignored_speakers:
+            continue
+        for pth2 in glob(f"{pth}/*/", recursive=False):
+            items.extend(artic(pth2, meta_file))
+    return items
 
 def kss(root_path, meta_file, **kwargs):  # pylint: disable=unused-argument
     """Korean single-speaker dataset from https://www.kaggle.com/datasets/bryanpark/korean-single-speaker-speech-dataset"""

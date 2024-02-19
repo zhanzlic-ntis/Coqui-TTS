@@ -148,7 +148,7 @@ def load_tts_samples(
             if not fn.exists():
                 fn = Path(root_path) / fn
 
-            assert fn.exists(), f" [!] Cannot find/open attention metafile \"{dataset['meta_file_dur']}\""
+            assert fn.exists(), f" [!] Cannot find/open attention metafile \"{fn}\""
             meta_data = dict(load_duration_meta_data(fn))
 
             print(" | > Loading duration metadata", fn)
