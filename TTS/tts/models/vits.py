@@ -289,7 +289,7 @@ class VitsDataset(TTSDataset):
         if "duration" in item:
             output_item["duration"] = item["duration"]
             assert len(output_item["duration"]) == output_item["token_len"], \
-                f"different token and duration vector lengths for {item["speaker_name"]} - {item["audio_unique_name"]}: " \
+                f"different token and duration vector lengths for {item['speaker_name']} - {item['audio_unique_name']}: " \
                     + str(output_item["token_ids"]) + " and " + str(output_item["duration"])
 
         return output_item
