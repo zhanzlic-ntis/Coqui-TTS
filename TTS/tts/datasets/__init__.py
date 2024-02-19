@@ -154,12 +154,12 @@ def load_tts_samples(
 
             print(" | > Loading duration metadata", fn)
 
-            for idx, ins in enumerate(meta_data_train_all):
+            for idx, ins in enumerate(meta_data_train):
                 assert ins["utt_name"] in meta_data, f" [!] Cannot find \"{ins['utt_name']}\" in duration metafile"
                 meta_data_train_all[idx].update({"duration": meta_data[ins["utt_name"]]})
 
-            if meta_data_eval_all:
-                for idx, ins in enumerate(meta_data_eval_all):
+            if meta_data_eval:
+                for idx, ins in enumerate(meta_data_eval):
                     assert ins["utt_name"] in meta_data, f" [!] Cannot find \"{ins['utt_name']}\" in duration metafile"
                     meta_data_eval_all[idx].update({"duration": meta_data[ins["utt_name"]]})
 
@@ -173,7 +173,7 @@ def load_tts_samples(
             assert fn.exists(), f" [!] Cannot find/open attention metafile \"{dataset['meta_file_attn_mask']}\""
             meta_data = dict(load_attention_mask_meta_data(fn))
             
-            for idx, ins in enumerate(meta_data_train_all):
+            for idx, ins in enumerate(meta_data_train):
                 
                 # ZHa: loading attention mask by the utterance name or by the full wave filename
                 attn_file = None
@@ -187,8 +187,8 @@ def load_tts_samples(
                 else:
                     pass # no attention file found (may be created during the training process)
 
-            if meta_data_eval_all:
-                for idx, ins in enumerate(meta_data_eval_all):
+            if meta_data_eval:
+                for idx, ins in enumerate(meta_data_eval):
                     
                     # ZHa: loading attention mask by the utterance name or by the full wave filename
                     attn_file = None
