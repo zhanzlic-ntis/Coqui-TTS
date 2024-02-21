@@ -127,9 +127,13 @@ def wav_to_spec(y, n_fft, hop_length, win_length, center=False):
         pad_mode="reflect",
         normalized=False,
         onesided=True,
-        return_complex=False,
+        # JMa: To resolve UserWarning: stft with return_complex=False is deprecated by https://github.com/coqui-ai/TTS/issues/2639
+        # return_complex=False,
+        return_complex=True,
     )
 
+    # JMa: To resolve UserWarning: stft with return_complex=False is deprecated by https://github.com/coqui-ai/TTS/issues/2639
+    spec = torch.view_as_real(spec)
     spec = torch.sqrt(spec.pow(2).sum(-1) + 1e-6)
     return spec
 
@@ -191,9 +195,13 @@ def wav_to_mel(y, n_fft, num_mels, sample_rate, hop_length, win_length, fmin, fm
         pad_mode="reflect",
         normalized=False,
         onesided=True,
-        return_complex=False
+        # JMa: To resolve UserWarning: stft with return_complex=False is deprecated by https://github.com/coqui-ai/TTS/issues/2639
+        # return_complex=False,
+        return_complex=True,
     )
 
+    # JMa: To resolve UserWarning: stft with return_complex=False is deprecated by https://github.com/coqui-ai/TTS/issues/2639
+    spec = torch.view_as_real(spec)
     spec = torch.sqrt(spec.pow(2).sum(-1) + 1e-6)
     spec = torch.matmul(mel_basis[fmax_dtype_device], spec)
     spec = amp_to_db(spec)
@@ -514,7 +522,7 @@ class VitsArgs(Coqpit):
         init_discriminator (bool):
             Initialize the disciminator network if set True. Set False for inference. Defaults to True.
 
-        use_spectral_norm_disriminator (bool):
+        use_spectral_norm_discriminator (bool):
             Use spectral normalization over weight norm in the discriminator. Defaults to False.
 
         use_speaker_embedding (bool):
@@ -624,7 +632,7 @@ class VitsArgs(Coqpit):
     inference_noise_scale_dp: float = 1.0
     max_inference_len: int = None
     init_discriminator: bool = True
-    use_spectral_norm_disriminator: bool = False
+    use_spectral_norm_discriminator: bool = False
     use_speaker_embedding: bool = False
     num_speakers: int = 0
     speakers_file: str = None
@@ -772,7 +780,7 @@ class Vits(BaseTTS):
         if self.args.init_discriminator:
             self.disc = VitsDiscriminator(
                 periods=self.args.periods_multi_period_discriminator,
-                use_spectral_norm=self.args.use_spectral_norm_disriminator,
+                use_spectral_norm=self.args.use_spectral_norm_discriminator,
             )
 
     @property
@@ -1586,7 +1594,9 @@ class Vits(BaseTTS):
                 do_trim_silence=False,
             )
             test_audios["{}-audio".format(idx)] = outputs["wav"]
-            test_figures["{}-alignment".format(idx)] = plot_alignment(outputs["alignments"].T, output_fig=False)
+            # JMa: Resolve UserWarning: The use of `x.T` on tensors of dimension other than 2 to reverse their shape is deprecated
+            # test_figures["{}-alignment".format(idx)] = plot_alignment(outputs["alignments"].T, output_fig=False)
+            test_figures["{}-alignment".format(idx)] = plot_alignment(outputs["alignments"].mT, output_fig=False)
         return {"figures": test_figures, "audios": test_audios}
 
     def test_log(
