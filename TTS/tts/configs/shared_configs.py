@@ -272,6 +272,9 @@ class BaseTTSConfig(BaseTrainingConfig):
             If between 0.0 and 1.0 represents the proportion of the dataset to include in the evaluation set.
             If > 1, represents the absolute number of evaluation samples. Defaults to 0.01 (1%).
 
+        eval_split_random_seed (int)
+            Seed of random generator for splitting data to train/evaluation.
+
         use_speaker_weighted_sampler (bool):
             Enable / Disable the batch balancer by speaker. Defaults to ```False```.
 
@@ -335,6 +338,7 @@ class BaseTTSConfig(BaseTrainingConfig):
     # evaluation
     eval_split_max_size: int = None
     eval_split_size: float = 0.01
+    eval_split_random_seed: int = 0
     # weighted samplers
     use_speaker_weighted_sampler: bool = False
     speaker_weighted_sampler_alpha: float = 1.0

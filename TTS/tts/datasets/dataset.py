@@ -569,10 +569,7 @@ class TTSDataset(Dataset):
 
         raise TypeError(
             (
-                "batch must contain tensors, numbers, dicts or lists;\
-                         found {}".format(
-                    type(batch[0])
-                )
+                "batch must contain tensors, numbers, dicts or lists; found {}".format(type(batch[0]))
             )
         )
 
