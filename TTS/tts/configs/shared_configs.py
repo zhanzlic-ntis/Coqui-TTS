@@ -312,6 +312,7 @@ class BaseTTSConfig(BaseTrainingConfig):
     # training params
     batch_group_size: int = 0
     loss_masking: bool = None
+    use_external_duration = False
     # dataloading
     min_audio_len: int = 1
     max_audio_len: int = float("inf")

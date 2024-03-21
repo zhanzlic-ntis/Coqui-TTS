@@ -599,6 +599,8 @@ class VitsArgs(Coqpit):
             to the `config.audio.sample_rate`. If it is False you will need to add extra
             `upsample_rates_decoder` to match the shape. Defaults to True.
 
+        use_external_duration (bool)
+
     """
 
     num_chars: int = 100
@@ -658,6 +660,7 @@ class VitsArgs(Coqpit):
     interpolate_z: bool = True
     reinit_DP: bool = False
     reinit_text_encoder: bool = False
+    use_external_duration: bool = False
 
 
 class Vits(BaseTTS):
@@ -933,7 +936,7 @@ class Vits(BaseTTS):
     @staticmethod
     def _set_cond_input(aux_input: Dict):
         """Set the speaker conditioning input based on the multi-speaker mode."""
-        sid, g, lid, durations = None, None, None, None
+        sid, g, lid, durations, attn = None, None, None, None, None
         if "speaker_ids" in aux_input and aux_input["speaker_ids"] is not None:
             sid = aux_input["speaker_ids"]
             if sid.ndim == 0:
@@ -953,7 +956,11 @@ class Vits(BaseTTS):
             if durations.ndim == 2:
                 durations = durations.unsqueeze_(1)
 
-        return sid, g, lid, durations
+        attn = aux_input.get("attn", None)
+        if attn is not None and attn.ndim == 3:
+            attn = attn.unsqueeze_(1)
+
+        return sid, g, lid, durations, attn
 
     def _set_speaker_input(self, aux_input: Dict):
         d_vectors = aux_input.get("d_vectors", None)
@@ -1071,7 +1078,7 @@ class Vits(BaseTTS):
             - gt_spk_emb: :math:`[B, 1, speaker_encoder.proj_dim]`
             - syn_spk_emb: :math:`[B, 1, speaker_encoder.proj_dim]`
         """
-        sid, g, lid, dur = self._set_cond_input(aux_input)
+        sid, g, lid, dur, attn = self._set_cond_input(aux_input)
 
         # speaker embedding
         if self.args.use_speaker_embedding and sid is not None:
@@ -1090,13 +1097,19 @@ class Vits(BaseTTS):
         # flow layers
         z_p = self.flow(z, y_mask, g=g)
 
-        attn = aux_input.get("attn", None)
-        if attn is None:
+        if (not self.config.use_external_duration) or (dur is None):
             attn = self.forward_mas(z_p, m_p, logs_p, x_mask, y_mask)
-        if attn.ndim == 3:
-            attn = attn.unsqueeze_(1)
-        if dur is None:
+            if attn.ndim == 3:
+                attn = attn.unsqueeze_(1)
             dur = attn.sum(3)
+
+        #attn = aux_input.get("attn", None)
+        #if attn is None:
+        #    attn = self.forward_mas(z_p, m_p, logs_p, x_mask, y_mask)
+        #if attn.ndim == 3:
+        #    attn = attn.unsqueeze_(1)
+        #if dur is None:
+        #    dur = attn.sum(3)
 
         loss_duration = self.get_duration_loss(dur, x, x_mask, g, lang_emb)
 
@@ -1223,7 +1236,7 @@ class Vits(BaseTTS):
         # JMa: Save input
         x_input = x
 
-        sid, g, lid, durations = self._set_cond_input(aux_input)
+        sid, g, lid, durations, _ = self._set_cond_input(aux_input)
         x_lengths = self._set_x_lengths(x, aux_input)
 
         # speaker embedding
