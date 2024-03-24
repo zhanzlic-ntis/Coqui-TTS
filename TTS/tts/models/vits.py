@@ -998,6 +998,24 @@ class Vits(BaseTTS):
             duration_loss = torch.sum((log_durations_pred - log_durations) ** 2, [1, 2]) / torch.sum(x_mask)
 
         return duration_loss
+    
+
+    def get_duration_mse(self, duration, duration_ref, x_mask):
+
+        with torch.no_grad():
+            duration_mse = torch.square(torch.sub(duration, duration_ref))
+            duration_mse = duration_mse.sum() / x_mask.sum()
+
+        return duration_mse
+    
+
+    def get_duration_mae(self, duration, duration_ref, x_mask):
+
+        with torch.no_grad():
+            duration_mae = torch.abs(torch.sub(duration, duration_ref))
+            duration_mae = duration_mae.sum() / x_mask.sum()
+
+        return duration_mae
 
 
     def forward_mas(self, z_p, m_p, logs_p, x_mask, y_mask):
@@ -1097,21 +1115,22 @@ class Vits(BaseTTS):
         # flow layers
         z_p = self.flow(z, y_mask, g=g)
 
+        dur_ref = dur
+
         if (not self.config.use_external_duration) or (dur is None):
             attn = self.forward_mas(z_p, m_p, logs_p, x_mask, y_mask)
             if attn.ndim == 3:
                 attn = attn.unsqueeze_(1)
             dur = attn.sum(3)
 
-        #attn = aux_input.get("attn", None)
-        #if attn is None:
-        #    attn = self.forward_mas(z_p, m_p, logs_p, x_mask, y_mask)
-        #if attn.ndim == 3:
-        #    attn = attn.unsqueeze_(1)
-        #if dur is None:
-        #    dur = attn.sum(3)
-
         loss_duration = self.get_duration_loss(dur, x, x_mask, g, lang_emb)
+        
+        if dur_ref is not None:
+            duration_mse = self.get_duration_mse(dur, dur_ref, x_mask)
+            duration_mae = self.get_duration_mae(dur, dur_ref, x_mask)
+        else:
+            duration_mse = None
+            duration_mae = None
 
         # expand prior
         m_p = torch.einsum("klmn, kjm -> kjn", [attn, m_p])
@@ -1163,6 +1182,12 @@ class Vits(BaseTTS):
             "syn_spk_emb": syn_spk_emb,
             "slice_ids": slice_ids,
         }
+
+        if duration_mse is not None:
+            outputs["duration_mse"] = duration_mse
+
+        if duration_mae is not None:
+            outputs["duration_mae"] = duration_mae
         
         return outputs
 
@@ -1430,6 +1455,14 @@ class Vits(BaseTTS):
                     scores_disc_real,
                     scores_disc_fake,
                 )
+            
+            # add reference-generated duration error
+            if outputs.get("duration_mse"):
+                loss_dict["duration_mse"] = outputs["duration_mse"]
+
+            if outputs.get("duration_mae"):
+                loss_dict["duration_mae"] = outputs["duration_mae"]
+
             return outputs, loss_dict
 
         if optimizer_idx == 1:
