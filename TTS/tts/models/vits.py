@@ -1289,6 +1289,7 @@ class Vits(BaseTTS):
                 logw = self.duration_predictor(
                     x, x_mask, g=g if self.args.condition_dp_on_speaker else None, lang_emb=lang_emb
                 )
+
             # JMa: set minimum duration if required
             w = self._set_min_inference_length(x_input, torch.exp(logw) * x_mask, aux_input["min_input_length"]) if aux_input.get("min_input_length", 0) else torch.exp(logw) * x_mask
             
@@ -1313,9 +1314,13 @@ class Vits(BaseTTS):
             # => each input symbol (phone or char) will have the duration given by the corresponding value (number of frames) in the torch vector
             assert torch.is_tensor(durations) and durations.shape[-1] == x.shape[-1], \
                 f"Durations ({durations.shape[-1]}) must be a tensor of the same length as input tokens ({x.shape[-1]})"
-            w = durations.to(device=x.device).unsqueeze(0)
+            
+            w = durations.to(device=x.device)
+            if durations.ndim == 2:
+                w = w.unsqueeze_(0)
 
-        w_ceil = torch.ceil(w)
+        #w_ceil = torch.ceil(w)
+        w_ceil = torch.round(w)
         y_lengths = torch.clamp_min(torch.sum(w_ceil, [1, 2]), 1).long()
         y_mask = sequence_mask(y_lengths, None).to(x_mask.dtype).unsqueeze(1)  # [B, 1, T_dec]
 
