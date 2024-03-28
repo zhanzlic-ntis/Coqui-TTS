@@ -1319,8 +1319,12 @@ class Vits(BaseTTS):
             if durations.ndim == 2:
                 w = w.unsqueeze_(0)
 
-        #w_ceil = torch.ceil(w)
-        w_ceil = torch.round(w)
+        w_ceil = torch.ceil(w)
+
+        # this is a nasty workaround - some units may be trained to be zero (e.g. punctuation, blank symbols)
+        # they skould not be ceiled to 1
+        w_ceil = torch.where(w < 0.1, torch.tensor(0.0), w_ceil)
+
         y_lengths = torch.clamp_min(torch.sum(w_ceil, [1, 2]), 1).long()
         y_mask = sequence_mask(y_lengths, None).to(x_mask.dtype).unsqueeze(1)  # [B, 1, T_dec]
 
