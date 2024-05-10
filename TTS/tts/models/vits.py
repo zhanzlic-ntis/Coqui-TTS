@@ -1651,7 +1651,8 @@ class Vits(BaseTTS):
             test_audios["{}-audio".format(idx)] = outputs["wav"]
             # JMa: Resolve UserWarning: The use of `x.T` on tensors of dimension other than 2 to reverse their shape is deprecated
             # test_figures["{}-alignment".format(idx)] = plot_alignment(outputs["alignments"].T, output_fig=False)
-            test_figures["{}-alignment".format(idx)] = plot_alignment(outputs["alignments"].mT, output_fig=False)
+            # ZHa: do not create useless alignment figures
+            # test_figures["{}-alignment".format(idx)] = plot_alignment(outputs["alignments"].mT, output_fig=False)
         return {"figures": test_figures, "audios": test_audios}
 
     def test_log(
