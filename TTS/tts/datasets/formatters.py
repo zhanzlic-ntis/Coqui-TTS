@@ -676,7 +676,7 @@ def kokoro(root_path, meta_file, **kwargs):  # pylint: disable=unused-argument
     return items
 
 
-def artic(root_path, meta_file, **kwargs):  # pylint: disable=unused-argument
+def artic(root_path, meta_file, language=None, **kwargs):  # pylint: disable=unused-argument
     """Normalizes the ARTIC meta data file to TTS format
     
     Args:
@@ -697,7 +697,7 @@ def artic(root_path, meta_file, **kwargs):  # pylint: disable=unused-argument
         voice, lang, sex = speaker_name.split(".")
     except ValueError:
         voice = speaker_name
-        lang, sex = None, None
+        lang, sex = language, None
     print(f" > ARTIC dataset: voice={voice}, sex={sex}, language={lang}")
     with open(txt_file, "r", encoding="utf-8") as ttf:
         for line in ttf:
@@ -715,7 +715,7 @@ def artic(root_path, meta_file, **kwargs):  # pylint: disable=unused-argument
             items.append({"utt_name": utt_name, "text": text, "audio_file": wav_file, "speaker_name": speaker_name, "language": lang, "root_path": root_path})
     return items
 
-def artic_multispeaker(root_path, meta_file, ignored_speakers=None, **kwargs): # pylint: disable=unused-argument
+def artic_multispeaker(root_path, meta_file, language=None, ignored_speakers=None, **kwargs): # pylint: disable=unused-argument
     """Normalizes the ARTIC multi-speaker meta data files to TTS format
 
     Args:
@@ -736,7 +736,7 @@ def artic_multispeaker(root_path, meta_file, ignored_speakers=None, **kwargs): #
         if isinstance(ignored_speakers, list):
             if speaker_name in ignored_speakers:
                 continue
-        items.extend(artic(pth, meta_file))
+        items.extend(artic(pth, meta_file, language=language))
     return items
 
 def artic_multispeaker_level2(root_path, meta_file, ignored_speakers=None, **kwargs): # pylint: disable=unused-argument
