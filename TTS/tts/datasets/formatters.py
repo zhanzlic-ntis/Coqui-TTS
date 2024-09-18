@@ -3,7 +3,7 @@ import re
 import xml.etree.ElementTree as ET
 from glob import glob
 from pathlib import Path
-from typing import List
+from typing import List, Dict
 
 import pandas as pd
 from tqdm import tqdm
@@ -676,7 +676,7 @@ def kokoro(root_path, meta_file, **kwargs):  # pylint: disable=unused-argument
     return items
 
 
-def artic(root_path, meta_file, **kwargs):  # pylint: disable=unused-argument
+def artic(root_path, meta_file, meta_file_dur = None, **kwargs):  # pylint: disable=unused-argument
     """Normalizes the ARTIC meta data file to TTS format
     
     Args:
@@ -699,6 +699,19 @@ def artic(root_path, meta_file, **kwargs):  # pylint: disable=unused-argument
         voice = speaker_name
         lang, sex = None, None
     print(f" > ARTIC dataset: voice={voice}, sex={sex}, language={lang}")
+
+    if meta_file_dur is not None:
+        fn = Path(meta_file_dur)
+        if not fn.exists():
+            fn = Path(root_path) / fn
+
+        assert fn.exists(), f" [!] Cannot find/open attention metafile \"{fn}\""
+
+        print(" | > Loading duration metadata", fn)
+        meta_data_dur = dict(load_duration_meta_data(fn))
+    else:
+        meta_data_dur = None
+
     with open(txt_file, "r", encoding="utf-8") as ttf:
         for line in ttf:
             # Check the number of standard separators
@@ -712,10 +725,14 @@ def artic(root_path, meta_file, **kwargs):  # pylint: disable=unused-argument
             utt_name = cols[0]
             wav_file = os.path.join(root_path, "wavs", utt_name + ".wav")
             text = cols[-1]
-            items.append({"utt_name": utt_name, "text": text, "audio_file": wav_file, "speaker_name": speaker_name, "language": lang, "root_path": root_path})
+
+            new_item = {"utt_name": utt_name, "text": text, "audio_file": wav_file, "speaker_name": speaker_name, "language": lang, "root_path": root_path}
+            if meta_data_dur is not None and utt_name in meta_data_dur:
+                new_item["duration"] = meta_data_dur[utt_name]
+            items.append(new_item)
     return items
 
-def artic_multispeaker(root_path, meta_file, ignored_speakers=None, **kwargs): # pylint: disable=unused-argument
+def artic_multispeaker(root_path, meta_file, ignored_speakers=None, meta_file_dur=None, **kwargs): # pylint: disable=unused-argument
     """Normalizes the ARTIC multi-speaker meta data files to TTS format
 
     Args:
@@ -736,7 +753,7 @@ def artic_multispeaker(root_path, meta_file, ignored_speakers=None, **kwargs): #
         if isinstance(ignored_speakers, list):
             if speaker_name in ignored_speakers:
                 continue
-        items.extend(artic(pth, meta_file))
+        items.extend(artic(pth, meta_file, meta_file_dur=meta_file_dur))
     return items
 
 def artic_multispeaker_level2(root_path, meta_file, ignored_speakers=None, **kwargs): # pylint: disable=unused-argument
@@ -787,3 +804,16 @@ def bel_tts_formatter(root_path, meta_file, **kwargs):  # pylint: disable=unused
             text = cols[1]
             items.append({"text": text, "audio_file": wav_file, "speaker_name": speaker_name, "root_path": root_path})
     return items
+
+
+def load_duration_meta_data(metafile_path) -> Dict:
+    """Load duration meta data file."""
+    with open(metafile_path, "r", encoding="utf-8") as f:
+        lines = f.readlines()
+
+    meta_data = dict()
+    for line in lines:
+        utt_name, dur_str = line.split("|")
+        durations = [ int(D.strip()) for D in dur_str.split(",") ]
+        meta_data[utt_name] = np.array(durations, dtype=np.int32)
+    return meta_data

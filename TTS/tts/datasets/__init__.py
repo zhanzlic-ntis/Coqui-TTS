@@ -126,12 +126,13 @@ def load_tts_samples(
         meta_file_val = dataset["meta_file_val"]
         ignored_speakers = dataset["ignored_speakers"]
         language = dataset["language"]
+        meta_file_dur = dataset.get("meta_file_dur", None)
 
         # setup the right data processor
         if formatter is None:
             formatter = _get_formatter_by_name(formatter_name)
         # load train set
-        meta_data_train = formatter(root_path, meta_file_train, ignored_speakers=ignored_speakers)
+        meta_data_train = formatter(root_path, meta_file_train, ignored_speakers=ignored_speakers, neta_file_dur=meta_file_dur)
         assert len(meta_data_train) > 0, f" [!] No training samples found in {root_path}/{meta_file_train}"
 
         meta_data_train = add_extra_keys(meta_data_train, language, dataset_name)
@@ -147,6 +148,7 @@ def load_tts_samples(
                 meta_data_eval, meta_data_train = split_dataset(meta_data_train, eval_size_per_dataset, eval_split_size, random_seed)
         
         # load phones/tokens duration
+        """
         if dataset.meta_file_dur:
             fn = Path(dataset["meta_file_dur"])
             if not fn.exists():
@@ -165,6 +167,7 @@ def load_tts_samples(
                 for idx, ins in enumerate(meta_data_eval):
                     assert ins["utt_name"] in meta_data, f" [!] Cannot find \"{ins['utt_name']}\" in duration metafile"
                     meta_data_eval[idx].update({"duration": meta_data[ins["utt_name"]]})
+        """
 
         # load attention masks for the duration predictor training
         if dataset.meta_file_attn_mask:
